@@ -1,0 +1,4 @@
+Average Loss: 9.892875
+Average CLoss: 7.937125
+Average GLoss: 1.6567500000000002
+Average LLoss: 0.298975

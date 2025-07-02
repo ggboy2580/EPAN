@@ -18,6 +18,8 @@ class ResNet50(nn.Module):
         self.base = nn.Sequential(*list(resnet50.children())[:-2])
         #self.base = nn.Sequential(*list(resnet50.children())[:])
         #self.base = nn.Sequential(*list(resnet50.children())[:])
+        self.epanlinear=nn.Linear(524288,2048)
+        self.epanlinear2=nn.Linear(4096,2048)
         self.classifier = nn.Linear(2048, num_classes)
         self.feat_dim = 2048 # feature dimension
         self.aligned = aligned
@@ -34,6 +36,11 @@ class ResNet50(nn.Module):
         x = self.base(x)
         # 获取前5个模块的输出
         ex = self.base[:5](ex)
+        print(ex.shape)
+        ex=ex.view(ex.size(0),-1)
+        print(ex.shape)
+        ex=self.epanlinear(ex)
+        print(ex.shape)
 
         if not self.training:
             lf = self.horizon_pool(x)
@@ -48,7 +55,10 @@ class ResNet50(nn.Module):
             lf = lf / torch.pow(lf,2).sum(dim=1, keepdim=True).clamp(min=1e-12).sqrt()
         x = F.avg_pool2d(x, x.size()[2:])
         f = x.view(x.size(0), -1)#这一步是需要张平的，作用还是把（32,2048,1,1，）转换成（32，2048）
+        f = torch.cat([ex, f], dim=1)
+        f=self.epanlinear2(f)
         f = 1. * f / (torch.norm(f, 2, dim=-1, keepdim=True).expand_as(f) + 1e-12)#这一步是数据归一化
+        print(f.shape)
 
         if not self.training:#如果不是训练
             return f,lf
@@ -115,7 +125,6 @@ if __name__ == '__main__':
     resnet50=ResNet50(751)
     imgs=torch.Tensor(32,3,256,128)
     f=resnet50(imgs)
-    print(f)
-    print(resnet50)
-    torch.save(resnet50, "resnet50.pt")
+    print(f.shape)
+
 

@@ -18,7 +18,8 @@ class ResNet50(nn.Module):
         self.base = nn.Sequential(*list(resnet50.children())[:-2])
         #self.base = nn.Sequential(*list(resnet50.children())[:])
         #self.base = nn.Sequential(*list(resnet50.children())[:])
-        self.epanlinear=nn.Linear(524288,2048)
+        self.reduce_conv = nn.Conv2d(256, 32, kernel_size=1)  # 通道数从256→128
+        self.epanlinear = nn.Linear(32 * 64 * 32, 2048)
         self.epanlinear2=nn.Linear(4096,2048)
         self.classifier = nn.Linear(2048, num_classes)
         self.feat_dim = 2048 # feature dimension
@@ -36,6 +37,8 @@ class ResNet50(nn.Module):
         x = self.base(x)
         # 获取前5个模块的输出
         ex = self.base[:5](ex)
+        print(ex.shape)
+        ex=self.reduce_conv(ex)
         print(ex.shape)
         ex=ex.view(ex.size(0),-1)
         print(ex.shape)
